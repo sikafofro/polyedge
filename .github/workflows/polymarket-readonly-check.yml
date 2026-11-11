@@ -1,0 +1,24 @@
+name: Polymarket read-only API check
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "backend/app/polymarket_data.py"
+      - "scripts/polymarket_readonly_check.py"
+      - ".github/workflows/polymarket-readonly-check.yml"
+
+jobs:
+  gamma-read-only:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install -r backend/requirements.txt
+      - name: Query public Polymarket soccer events
+        run: python scripts/polymarket_readonly_check.py
