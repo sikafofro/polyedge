@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from datetime import date, timedelta, timezone, datetime
 from typing import Any
 
 import httpx
@@ -32,10 +33,18 @@ def _contains_team(title: str, team: str) -> bool:
     return any(f" {candidate} " in title_norm for candidate in candidates)
 
 
-def fetch_football_events(limit: int = 100) -> list[dict[str, Any]]:
-    """Read active soccer events from Gamma. No wallet authentication is used."""
+def fetch_football_events(
+    limit: int = 100,
+    date_from: date | None = None,
+    date_to: date | None = None,
+) -> list[dict[str, Any]]:
+    """Read active soccer events in a date window from Gamma; no wallet auth."""
     if not 1 <= limit <= 100:
         raise ValueError("limit must be between 1 and 100")
+    start = date_from or datetime.now(timezone.utc).date()
+    end = date_to or (start + timedelta(days=14))
+    if end < start:
+        raise ValueError("date_to must be on or after date_from")
     try:
         response = httpx.get(
             f"{GAMMA_BASE_URL}/events",
@@ -43,6 +52,10 @@ def fetch_football_events(limit: int = 100) -> list[dict[str, Any]]:
                 "active": "true",
                 "closed": "false",
                 "tag_slug": "soccer",
+                "start_date_min": start.isoformat(),
+                "start_date_max": end.isoformat(),
+                "order": "startDate",
+                "ascending": "true",
                 "limit": limit,
                 "offset": 0,
             },
@@ -61,7 +74,7 @@ def fetch_football_events(limit: int = 100) -> list[dict[str, Any]]:
 def match_fixtures_to_events(
     fixtures: list[dict[str, Any]], events: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
-    """Conservatively match a fixture only when both team names occur in event title."""
+    """Match only when both fixture team names occur in the event title."""
     results: list[dict[str, Any]] = []
     for fixture in fixtures:
         home = str(fixture.get("home_team", ""))
