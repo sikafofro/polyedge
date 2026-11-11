@@ -1,71 +1,122 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>POLYEDGE — Control Desk</title>
-  <style>
-    :root{color-scheme:dark;--bg:#0b1020;--panel:#121a2b;--line:#27344a;--muted:#91a0b8;--text:#edf2fa;--accent:#a6d96a;--amber:#e8bd69}
-    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,ui-sans-serif,system-ui,sans-serif}
-    main{max-width:1120px;margin:auto;padding:36px 22px}header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:28px}
-    .brand{font-size:26px;font-weight:800;letter-spacing:.16em}.sub{color:var(--muted);font-size:12px;letter-spacing:.12em}
-    .status{border:1px solid #52633e;color:var(--accent);padding:7px 11px;border-radius:99px;font-size:12px}
-    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:19px}
-    .metric small,.muted{color:var(--muted)}.metric strong{display:block;font-size:30px;margin-top:8px;letter-spacing:-.04em}
-    section{margin-top:18px}.section-title{font-size:14px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 12px}
-    .wide{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}.team{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}.team:last-child{border:0}
-    .team b{font-weight:650}.team span{color:var(--muted);font-size:13px;text-align:right}
-    .pill{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:var(--amber)}
-    .foot{color:var(--muted);font-size:12px;margin-top:24px}
-    @media(max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wide{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column}}
-  </style>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POLYEDGE — Research Desk</title>
+<style>
+:root{color-scheme:dark;--bg:#0a0e14;--surface:#111821;--surface2:#151f2b;--line:#263342;--text:#edf2f7;--muted:#8d9aaa;--accent:#b6d68a;--warn:#d9b66f;--red:#d98989;--blue:#8fb6d8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,sans-serif}
+main{max-width:1440px;margin:auto;padding:28px 26px 52px}header{display:flex;justify-content:space-between;align-items:center;gap:18px;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.brand{font-size:23px;font-weight:800;letter-spacing:.2em}.eyebrow{color:var(--muted);font-size:10px;letter-spacing:.18em;text-transform:uppercase;margin-top:4px}
+.header-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.mode{border:1px solid #536544;color:var(--accent);border-radius:5px;padding:6px 10px;font-size:10px;letter-spacing:.1em}
+button{background:var(--accent);color:#11180c;border:0;border-radius:5px;padding:9px 14px;font-weight:700;cursor:pointer}button:disabled{opacity:.55;cursor:wait}
+h1{font-size:25px;letter-spacing:-.04em;margin:26px 0 4px}.intro{color:var(--muted);margin:0 0 22px}
+.kpis{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}.card,.panel{background:var(--surface);border:1px solid var(--line);border-radius:8px}
+.card{padding:16px}.label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.12em}.value{font-size:27px;font-weight:700;letter-spacing:-.04em;margin:8px 0 2px}.hint{color:var(--muted);font-size:11px}
+.layout{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(300px,.8fr);gap:14px;margin-top:14px}.panel{padding:18px;min-width:0}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+h2{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin:0}.subhead{color:var(--muted);font-size:11px}
+.fixture{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:14px 0;border-bottom:1px solid var(--line)}.fixture:last-child{border:0}.fixture-title{font-weight:650;font-size:14px}.fixture-meta{color:var(--muted);font-size:11px;margin-top:4px}
+.status{font-size:10px;text-transform:uppercase;letter-spacing:.08em;padding:4px 7px;border:1px solid var(--line);border-radius:4px;height:max-content;color:var(--warn)}.status.good{color:var(--accent);border-color:#536544}.status.bad{color:var(--red);border-color:#674747}
+.data-row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--line)}.data-row:last-child{border:0}.data-row span:first-child{color:var(--muted)}.data-row strong{text-align:right;font-weight:600}
+.callout{padding:12px;border:1px solid var(--line);border-radius:6px;color:var(--muted);font-size:12px;margin-top:12px}.callout.warn{border-color:#65543a;color:var(--warn)}
+.market{padding:12px 0;border-bottom:1px solid var(--line)}.market:last-child{border:0}.market-title{font-weight:650}.market-meta{font-size:11px;color:var(--muted);margin-top:4px}
+.picks{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.pick{background:var(--surface2);padding:9px;border-radius:5px}.pick small{display:block;color:var(--muted);font-size:10px}.pick b{font-size:17px}
+.empty{color:var(--muted);padding:20px 0;font-size:12px}.footer{font-size:11px;color:var(--muted);margin-top:20px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+@media(max-width:900px){.kpis{grid-template-columns:repeat(3,1fr)}.layout{grid-template-columns:1fr}}
+@media(max-width:560px){main{padding:20px 14px 36px}.kpis{grid-template-columns:repeat(2,1fr)}header{align-items:flex-start;flex-direction:column}.header-right{width:100%;justify-content:space-between}.value{font-size:23px}}
+</style>
 </head>
-<body>
-<main>
-  <header>
-    <div><div class="brand">POLYEDGE</div><div class="sub">FOOTBALL STRATEGY CONTROL DESK</div></div>
-    <div class="status">● PAPER MODE · LIVE TRADING DISABLED</div>
-  </header>
-  <div class="grid">
-    <div class="panel metric"><small>Starting bankroll</small><strong id="bankroll">$50.00</strong><small>USD · initial paper balance</small></div>
-    <div class="panel metric"><small>Stake per accumulator</small><strong id="stake">$12.50</strong><small>25% of settled available bankroll</small></div>
-    <div class="panel metric"><small>Selected clubs</small><strong id="club-count">9</strong><small>domestic league home fixtures</small></div>
-    <div class="panel metric"><small>Grouping window</small><strong>2 hrs</strong><small>one active accumulator at a time</small></div>
-  </div>
-  <section class="wide">
-    <div class="panel">
-      <h2 class="section-title">Configured home teams</h2>
-      <div id="teams"><p class="muted">Loading team rules…</p></div>
-    </div>
-    <div class="panel">
-      <h2 class="section-title">Execution discipline</h2>
-      <div class="team"><b>Competition</b><span>Domestic league only</span></div>
-      <div class="team"><b>Venue</b><span>Selected club at home</span></div>
-      <div class="team"><b>Entry filters</b><span>No minimum odds/confidence</span></div>
-      <div class="team"><b>Open positions</b><span>One accumulator maximum</span></div>
-      <div class="team"><b>Next entry</b><span>After full settlement</span></div>
-      <div class="team"><b>Market execution</b><span class="pill">Not connected</span></div>
-    </div>
-  </section>
-  <p class="foot">POLYEDGE V1.1 · Fixture scanning and bankroll settings are configured. Persistent settlement tracking and verified market execution are still in development.</p>
+<body><main>
+<header>
+ <div><div class="brand">POLYEDGE</div><div class="eyebrow">Football intelligence · Research desk</div></div>
+ <div class="header-right"><span class="mode">● PAPER MODE · NO ORDERS</span><button id="refresh" type="button">Refresh research</button></div>
+</header>
+<h1>Market Research</h1><p class="intro">A read-only view of qualifying fixtures, Polymarket markets and paper strategy candidates.</p>
+<div class="kpis">
+ <div class="card"><div class="label">Available bankroll</div><div class="value" id="bankroll">—</div><div class="hint">Configured starting balance</div></div>
+ <div class="card"><div class="label">Paper stake</div><div class="value" id="stake">—</div><div class="hint" id="stake-hint">25% strategy allocation</div></div>
+ <div class="card"><div class="label">Qualifying fixtures</div><div class="value" id="fixture-count">—</div><div class="hint">Selected clubs at home</div></div>
+ <div class="card"><div class="label">Validated markets</div><div class="value" id="market-count">—</div><div class="hint">Complete home/draw/away only</div></div>
+ <div class="card"><div class="label">Open orders</div><div class="value">0</div><div class="hint">Trading is disabled</div></div>
+</div>
+<div class="layout">
+ <div class="panel">
+  <div class="panel-head"><h2>Qualifying fixtures</h2><span class="subhead" id="window-label">Next 14 days</span></div>
+  <div id="fixtures"><div class="empty">Refresh to load fixture research.</div></div>
+ </div>
+ <div class="panel">
+  <div class="panel-head"><h2>Paper strategy</h2><span class="status good">Read only</span></div>
+  <div class="data-row"><span>Execution mode</span><strong>Paper</strong></div>
+  <div class="data-row"><span>Stake fraction</span><strong id="fraction">—</strong></div>
+  <div class="data-row"><span>Maximum active slips</span><strong id="max-slips">—</strong></div>
+  <div class="data-row"><span>Settlement rule</span><strong id="settlement">—</strong></div>
+  <div class="data-row"><span>Fixture grouping</span><strong id="group-window">—</strong></div>
+  <div class="callout">No wallet connection, order submission or live execution is enabled in this desk.</div>
+ </div>
+ <div class="panel">
+  <div class="panel-head"><h2>Market intelligence</h2><span class="subhead">Polymarket public data</span></div>
+  <div id="markets"><div class="empty">Market analysis will appear after refresh.</div></div>
+ </div>
+ <div class="panel">
+  <div class="panel-head"><h2>Accumulator proposal</h2><span class="status" id="slip-status">Awaiting data</span></div>
+  <div id="accumulator"><div class="empty">No paper accumulator has been proposed.</div></div>
+ </div>
+</div>
+<div class="footer"><span id="updated">Not yet refreshed</span><span>POLYEDGE · Research only · Verify all prices before making decisions</span></div>
 </main>
 <script>
-(async()=>{
-  try{
-    const [configResponse,strategyResponse]=await Promise.all([fetch('/api/v1/config'),fetch('/api/v1/strategy')]);
-    if(!configResponse.ok||!strategyResponse.ok) throw new Error('API not available');
-    const [config,strategy]=await Promise.all([configResponse.json(),strategyResponse.json()]);
-    const teams=config.selected_teams||[];
-    document.getElementById('club-count').textContent=teams.length;
-    document.getElementById('bankroll').textContent=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(strategy.starting_bankroll_usd);
-    document.getElementById('stake').textContent=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(strategy.starting_bankroll_usd*strategy.stake_fraction);
-    document.getElementById('teams').innerHTML=teams.map(t=>
-      '<div class="team"><b>'+t.team+'</b><span>'+t.league+' · Avoid: '+(t.excluded_opponents||[]).join(', ')+'</span></div>'
-    ).join('');
-  }catch(e){
-    document.getElementById('teams').innerHTML='<p class="muted">Dashboard shell loaded. Start the backend API to load live configuration.</p>';
+const $=id=>document.getElementById(id);
+const money=value=>value==null?'—':new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(value);
+const esc=value=>String(value??'').replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+async function refresh(){
+ const button=$('refresh');button.disabled=true;button.textContent='Refreshing…';
+ $('fixtures').innerHTML='<div class="empty">Loading fixtures and market data…</div>';
+ try{
+  const [configRes,strategyRes,marketRes]=await Promise.all([
+   fetch('/api/v1/config'),fetch('/api/v1/strategy'),fetch('/api/v1/polymarket/football-markets?days=14&limit=5')
+  ]);
+  if(!configRes.ok||!strategyRes.ok)throw new Error('The backend configuration endpoints are unavailable.');
+  const [config,strategy]=await Promise.all([configRes.json(),strategyRes.json()]);
+  const data=marketRes.ok?await marketRes.json():null;
+  const bankroll=Number(strategy.starting_bankroll_usd),fraction=Number(strategy.stake_fraction);
+  $('bankroll').textContent=money(bankroll);$('stake').textContent=money(bankroll*fraction);
+  $('stake-hint').textContent=(fraction*100).toFixed(0)+'% of configured bankroll';
+  $('fraction').textContent=(fraction*100).toFixed(0)+'%';
+  $('max-slips').textContent=strategy.max_active_accumulators??'—';
+  $('settlement').textContent=strategy.settlement_required_before_next_entry?'After settlement':'Not required';
+  $('group-window').textContent=(strategy.fixture_grouping_window_minutes??'—')+' minutes';
+  const fixtures=data?.matches||[];
+  $('fixture-count').textContent=data?.fixtures_checked??'—';
+  const intel=data?.market_intelligence;
+  $('market-count').textContent=intel?.validated_match_winner_markets??'—';
+  $('window-label').textContent=data?esc(data.date_from)+' → '+esc(data.date_to):'Market API unavailable';
+  $('fixtures').innerHTML=fixtures.length?fixtures.map(f=>{
+   const status=f.market_match_status==='matched'?'Event matched':'No event match';
+   const cls=f.market_match_status==='matched'?'':'bad';
+   return '<div class="fixture"><div><div class="fixture-title">'+esc(f.home_team)+' <span class="muted">vs</span> '+esc(f.away_team)+'</div><div class="fixture-meta">'+esc(f.league)+' · '+esc(new Date(f.kickoff).toLocaleString())+'</div></div><span class="status '+cls+'">'+status+'</span></div>';
+  }).join(''):'<div class="empty">No qualifying fixtures returned. Check provider availability and team rules.</div>';
+  const analyses=intel?.fixtures||[];
+  $('markets').innerHTML=analyses.length?analyses.map(f=>{
+   const m=f.selected_market;
+   if(!m)return '<div class="market"><div class="market-title">'+esc(f.home_team)+' vs '+esc(f.away_team)+'</div><div class="market-meta">No validated 1X2 market · rejected or unavailable</div></div>';
+   return '<div class="market"><div class="market-title">'+esc(f.home_team)+' vs '+esc(f.away_team)+'</div><div class="market-meta">'+esc(m.question)+' · Liquidity '+money(m.liquidity_usd)+'</div><div class="picks"><div class="pick"><small>HOME</small><b>'+Number(m.home_win_price).toFixed(3)+'</b></div><div class="pick"><small>DRAW</small><b>'+Number(m.outcomes.draw.price).toFixed(3)+'</b></div><div class="pick"><small>AWAY</small><b>'+Number(m.outcomes.away.price).toFixed(3)+'</b></div></div></div>';
+  }).join(''):'<div class="empty">No market analysis available.</div>';
+  const slip=intel?.paper_accumulator;
+  $('slip-status').textContent=slip?.status==='proposed_paper_accumulator'?'Paper proposal':'No proposal';
+  $('slip-status').className='status '+(slip?.status==='proposed_paper_accumulator'?'good':'');
+  if(slip?.status==='proposed_paper_accumulator'){
+   $('accumulator').innerHTML='<div class="data-row"><span>Selections</span><strong>'+slip.leg_count+'</strong></div>'+slip.legs.map(l=>'<div class="market"><div class="market-title">'+esc(l.selection)+'</div><div class="market-meta">'+esc(l.fixture)+' · '+Number(l.decimal_odds).toFixed(3)+' odds</div></div>').join('')+'<div class="data-row"><span>Combined odds</span><strong>'+Number(slip.combined_decimal_odds).toFixed(3)+'</strong></div><div class="data-row"><span>Paper stake</span><strong>'+money(slip.stake_usd)+'</strong></div><div class="data-row"><span>Potential return</span><strong>'+money(slip.potential_return_usd)+'</strong></div><div class="callout">Paper calculation only. No order has been placed.</div>';
+  }else{
+   $('accumulator').innerHTML='<div class="empty">No accumulator proposed. '+esc(slip?.reason||'Verified market prices are not available.')+'</div>';
   }
-})();
-</script>
-</body>
-</html>
+  $('updated').textContent='Last refresh: '+new Date().toLocaleString()+' · '+(data?'Market data request completed':'Market data endpoint unavailable');
+ }catch(error){
+  $('fixtures').innerHTML='<div class="empty">'+esc(error.message)+'</div>';
+  $('markets').innerHTML='<div class="empty">Market research could not be loaded.</div>';
+  $('accumulator').innerHTML='<div class="empty">No proposal generated.</div>';
+  $('updated').textContent='Refresh failed: '+esc(error.message);
+ }finally{button.disabled=false;button.textContent='Refresh research'}
+}
+$('refresh').addEventListener('click',refresh);
+refresh();
+</script></body></html>
