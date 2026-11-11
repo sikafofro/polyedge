@@ -1,0 +1,102 @@
+{
+  "version": "1.0",
+  "competition_scope": "domestic_league_only",
+  "venue_scope": "selected_team_home_only",
+  "selected_teams": [
+    {
+      "league": "Premier League",
+      "country": "England",
+      "team": "Arsenal",
+      "excluded_opponents": [
+        "Liverpool",
+        "Manchester United",
+        "Manchester City",
+        "Brighton",
+        "Tottenham Hotspur",
+        "Aston Villa",
+        "Chelsea"
+      ]
+    },
+    {
+      "league": "La Liga",
+      "country": "Spain",
+      "team": "Barcelona",
+      "excluded_opponents": [
+        "Real Madrid",
+        "Real Betis",
+        "Atletico Madrid"
+      ]
+    },
+    {
+      "league": "La Liga",
+      "country": "Spain",
+      "team": "Real Madrid",
+      "excluded_opponents": [
+        "Barcelona",
+        "Real Betis",
+        "Atletico Madrid"
+      ]
+    },
+    {
+      "league": "Bundesliga",
+      "country": "Germany",
+      "team": "Bayern Munich",
+      "excluded_opponents": [
+        "Borussia Dortmund"
+      ]
+    },
+    {
+      "league": "Eredivisie",
+      "country": "Netherlands",
+      "team": "PSV",
+      "excluded_opponents": [
+        "Feyenoord"
+      ]
+    },
+    {
+      "league": "Ligue 1",
+      "country": "France",
+      "team": "Paris Saint-Germain",
+      "excluded_opponents": [
+        "Monaco",
+        "Marseille",
+        "Strasbourg"
+      ]
+    },
+    {
+      "league": "Primeira Liga",
+      "country": "Portugal",
+      "team": "Porto",
+      "excluded_opponents": [
+        "Sporting CP",
+        "Benfica"
+      ]
+    },
+    {
+      "league": "Primeira Liga",
+      "country": "Portugal",
+      "team": "Sporting CP",
+      "excluded_opponents": [
+        "Porto",
+        "Benfica"
+      ]
+    },
+    {
+      "league": "Serie A",
+      "country": "Italy",
+      "team": "Inter Milan",
+      "excluded_opponents": [
+        "AC Milan",
+        "Fiorentina",
+        "Como",
+        "Lazio",
+        "Roma",
+        "Napoli"
+      ]
+    }
+  ],
+  "notes": [
+    "Team names may need provider-specific aliases when fixture data is connected.",
+    "The user mentioned one additional Portuguese exclusion but has not yet identified it; do not infer it."
+  ]
+}
