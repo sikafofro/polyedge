@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app.core import group_fixtures, parse_fixture_csv, qualify_fixture
@@ -119,3 +119,17 @@ def scan_fixture_csv(payload: FixtureCsvRequest) -> dict[str, Any]:
         "accumulator_groups": groups,
         "note": "CSV input is test data only. No market orders are placed.",
     }
+
+
+@app.post("/api/v1/fixtures/upload")
+async def upload_fixture_csv(file: UploadFile = File(...)) -> dict[str, Any]:
+    """Accept a real CSV file upload and run it through the same scanner."""
+    if file.filename and not file.filename.casefold().endswith(".csv"):
+        raise HTTPException(status_code=415, detail="Please upload a .csv file")
+    try:
+        csv_text = (await file.read()).decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=422, detail="CSV must be UTF-8 encoded") from exc
+    if not csv_text.strip():
+        raise HTTPException(status_code=422, detail="Uploaded CSV is empty")
+    return scan_fixture_csv(FixtureCsvRequest(csv_text=csv_text))
