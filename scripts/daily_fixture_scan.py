@@ -8,12 +8,18 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
 from app.core import group_fixtures, qualify_fixture
-from app.fixture_provider import FixtureProviderError, fetch_fixtures, upcoming_range
+from app.fixture_provider import (
+    FixtureProviderError,
+    fetch_fixtures_with_diagnostics,
+    upcoming_range,
+)
+
 
 def main() -> int:
     try:
         start, end = upcoming_range(days=7)
-        fixtures = fetch_fixtures(start, end)
+        scan = fetch_fixtures_with_diagnostics(start, end)
+        fixtures = scan.fixtures
     except (FixtureProviderError, ValueError) as exc:
         print(f"Fixture scan failed: {exc}", file=sys.stderr)
         return 1
@@ -44,23 +50,55 @@ def main() -> int:
         "total_fixtures": len(fixtures),
         "qualifying_fixtures": len(eligible),
         "skipped_fixtures": len(skipped),
+        "league_diagnostics": scan.leagues,
         "eligible": eligible,
         "skipped": skipped,
         "accumulator_groups": [
-            {"group_number": i, "fixtures": [
-                {"kickoff": f.kickoff.isoformat(), "home_team": f.home_team,
-                 "away_team": f.away_team, "league": f.league}
-                for f in group
-            ]} for i, group in enumerate(groups, start=1)
+            {
+                "group_number": i,
+                "fixtures": [
+                    {
+                        "kickoff": f.kickoff.isoformat(),
+                        "home_team": f.home_team,
+                        "away_team": f.away_team,
+                        "league": f.league,
+                    }
+                    for f in group
+                ],
+            }
+            for i, group in enumerate(groups, start=1)
         ],
         "execution_mode": "paper",
         "note": "This report contains fixtures only. No bets were placed.",
     }
     output = ROOT / "fixture-scan-report.json"
     output.write_text(json.dumps(report, indent=2), encoding="utf-8")
-    print(json.dumps({k: report[k] for k in ("provider", "date_from", "date_to", "total_fixtures", "qualifying_fixtures", "skipped_fixtures")}, indent=2))
+    summary = {
+        key: report[key]
+        for key in (
+            "provider",
+            "date_from",
+            "date_to",
+            "total_fixtures",
+            "qualifying_fixtures",
+            "skipped_fixtures",
+        )
+    }
+    summary["leagues"] = [
+        {
+            "league": item["league"],
+            "api_matches": item["api_matches"],
+            "scheduled": item["scheduled"],
+            "timed": item["timed"],
+            "accepted_upcoming": item["accepted_upcoming"],
+            "error": item["error"],
+        }
+        for item in scan.leagues
+    ]
+    print(json.dumps(summary, indent=2))
     print(f"Full report written to {output}")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
