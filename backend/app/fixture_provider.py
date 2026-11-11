@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
 import httpx
@@ -39,7 +39,7 @@ def fetch_fixtures(date_from: date, date_to: date) -> list[Fixture]:
             for code, (league, country) in COMPETITIONS.items():
                 response = client.get(
                     f"{BASE_URL}/competitions/{code}/matches",
-                    params={"dateFrom": date_from.isoformat(), "dateTo": date_to.isoformat()},
+                    params={"dateFrom": date_from.isoformat(), "dateTo": date_to.isoformat(), "status": "SCHEDULED"},
                 )
                 if response.status_code == 403:
                     raise FixtureProviderError(
@@ -60,7 +60,7 @@ def fetch_fixtures(date_from: date, date_to: date) -> list[Fixture]:
                         league=league,
                         country=country,
                         competition_type="domestic_league",
-                        kickoff=__import__("datetime").datetime.fromisoformat(
+                        kickoff=datetime.fromisoformat(
                             match["utcDate"].replace("Z", "+00:00")
                         ),
                     ))
