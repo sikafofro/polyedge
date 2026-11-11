@@ -105,7 +105,7 @@ async function refresh(){
    const done=rollover.last_completed_cycle;
    $('roll-last-cycle').textContent=done?('#'+done.id+' · '+done.status+' · '+Number(done.cumulative_odds).toFixed(3)+' odds'):'None yet';
    $('roll-pilot-ready').textContent=rollover.pilot_ready?'One 4.00+ rollover completed':'Not yet achieved';
-   $('roll-mode').textContent='PAPER · NO ORDERS';
+   $('rollover-mode').textContent='PAPER · NO ORDERS';
    $('roll-progress').style.width=Math.min(100,(Number(cycle.cumulative_odds||1)/Number(rollover.target_odds))*100)+'%';
    $('roll-legs').innerHTML=(rollover.legs||[]).length?rollover.legs.map(l=>'<div class="data-row"><span>'+esc(l.fixture)+' · '+esc(l.selection)+'</span><strong>'+Number(l.decimal_odds).toFixed(2)+' · '+esc(l.result)+'</strong></div>').join(''):'<div class="empty">No settled selections in the active cycle yet.</div>';
   }
