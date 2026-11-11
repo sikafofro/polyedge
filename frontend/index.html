@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>POLYEDGE — Control Desk</title>
+  <style>
+    :root{color-scheme:dark;--bg:#0b1020;--panel:#121a2b;--line:#27344a;--muted:#91a0b8;--text:#edf2fa;--accent:#a6d96a;--amber:#e8bd69}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 Inter,ui-sans-serif,system-ui,sans-serif}
+    main{max-width:1120px;margin:auto;padding:36px 22px}header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:28px}
+    .brand{font-size:26px;font-weight:800;letter-spacing:.16em}.sub{color:var(--muted);font-size:12px;letter-spacing:.12em}
+    .status{border:1px solid #52633e;color:var(--accent);padding:7px 11px;border-radius:99px;font-size:12px}
+    .grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:19px}
+    .metric small,.muted{color:var(--muted)}.metric strong{display:block;font-size:30px;margin-top:8px;letter-spacing:-.04em}
+    section{margin-top:18px}.section-title{font-size:14px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:0 0 12px}
+    .wide{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}.team{display:flex;justify-content:space-between;gap:16px;padding:12px 0;border-bottom:1px solid var(--line)}.team:last-child{border:0}
+    .team b{font-weight:650}.team span{color:var(--muted);font-size:13px;text-align:right}
+    .pill{font-size:11px;border:1px solid var(--line);border-radius:6px;padding:4px 7px;color:var(--amber)}
+    .foot{color:var(--muted);font-size:12px;margin-top:24px}
+    @media(max-width:760px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.wide{grid-template-columns:1fr}header{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div><div class="brand">POLYEDGE</div><div class="sub">FOOTBALL STRATEGY CONTROL DESK</div></div>
+    <div class="status">● PAPER MODE · LIVE TRADING DISABLED</div>
+  </header>
+  <div class="grid">
+    <div class="panel metric"><small>Starting bankroll</small><strong id="bankroll">$100.00</strong><small>USD · initial paper balance</small></div>
+    <div class="panel metric"><small>Stake per accumulator</small><strong id="stake">25%</strong><small>of settled available bankroll</small></div>
+    <div class="panel metric"><small>Selected clubs</small><strong id="club-count">9</strong><small>domestic league home fixtures</small></div>
+    <div class="panel metric"><small>Grouping window</small><strong>2 hrs</strong><small>one active accumulator at a time</small></div>
+  </div>
+  <section class="wide">
+    <div class="panel">
+      <h2 class="section-title">Configured home teams</h2>
+      <div id="teams"><p class="muted">Loading team rules…</p></div>
+    </div>
+    <div class="panel">
+      <h2 class="section-title">Execution discipline</h2>
+      <div class="team"><b>Competition</b><span>Domestic league only</span></div>
+      <div class="team"><b>Venue</b><span>Selected club at home</span></div>
+      <div class="team"><b>Entry filters</b><span>No minimum odds/confidence</span></div>
+      <div class="team"><b>Open positions</b><span>One accumulator maximum</span></div>
+      <div class="team"><b>Next entry</b><span>After full settlement</span></div>
+      <div class="team"><b>Market execution</b><span class="pill">Not connected</span></div>
+    </div>
+  </section>
+  <p class="foot">POLYEDGE V1.0 · Monitoring prototype. Fixture feeds, persistence, historical backtesting and verified market execution are not yet connected.</p>
+</main>
+<script>
+(async()=>{
+  try{
+    const response=await fetch('/api/v1/config');
+    if(!response.ok) throw new Error('API not available');
+    const config=await response.json();
+    const teams=config.selected_teams||[];
+    document.getElementById('club-count').textContent=teams.length;
+    document.getElementById('teams').innerHTML=teams.map(t=>
+      '<div class="team"><b>'+t.team+'</b><span>'+t.league+' · Avoid: '+(t.excluded_opponents||[]).join(', ')+'</span></div>'
+    ).join('');
+  }catch(e){
+    document.getElementById('teams').innerHTML='<p class="muted">Dashboard shell loaded. Start the backend API to load the live rules configuration.</p>';
+  }
+})();
+</script>
+</body>
+</html>
