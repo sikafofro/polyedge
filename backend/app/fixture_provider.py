@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import os
-from datetime import date, datetime, timedelta
+from collections import Counter
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 import httpx
@@ -18,12 +20,21 @@ COMPETITIONS = {
     "PPL": ("Primeira Liga", "Portugal"),
     "SA": ("Serie A", "Italy"),
 }
+UPCOMING_STATUSES = {"SCHEDULED", "TIMED"}
+
 
 class FixtureProviderError(RuntimeError):
     pass
 
-def fetch_fixtures(date_from: date, date_to: date) -> list[Fixture]:
-    """Fetch upcoming domestic-league fixtures from football-data.org v4."""
+
+@dataclass
+class FixtureScan:
+    fixtures: list[Fixture]
+    leagues: list[dict[str, Any]]
+
+
+def fetch_fixtures_with_diagnostics(date_from: date, date_to: date) -> FixtureScan:
+    """Fetch upcoming fixtures and return per-league status diagnostics."""
     token = os.getenv("FOOTBALL_DATA_API_TOKEN")
     if not token:
         raise FixtureProviderError("FOOTBALL_DATA_API_TOKEN is not configured")
@@ -34,44 +45,94 @@ def fetch_fixtures(date_from: date, date_to: date) -> list[Fixture]:
 
     headers = {"X-Auth-Token": token, "Accept": "application/json"}
     fixtures: list[Fixture] = []
+    diagnostics: list[dict[str, Any]] = []
     try:
         with httpx.Client(timeout=25.0, headers=headers) as client:
             for code, (league, country) in COMPETITIONS.items():
-                response = client.get(
-                    f"{BASE_URL}/competitions/{code}/matches",
-                    params={"dateFrom": date_from.isoformat(), "dateTo": date_to.isoformat(), "status": "SCHEDULED"},
-                )
-                if response.status_code == 403:
-                    raise FixtureProviderError(
-                        f"Provider denied access to {league} ({code}); check your plan and competition coverage"
+                diagnostic: dict[str, Any] = {
+                    "code": code,
+                    "league": league,
+                    "country": country,
+                    "api_matches": 0,
+                    "scheduled": 0,
+                    "timed": 0,
+                    "accepted_upcoming": 0,
+                    "ignored_other_statuses": 0,
+                    "status_counts": {},
+                    "error": None,
+                }
+                try:
+                    response = client.get(
+                        f"{BASE_URL}/competitions/{code}/matches",
+                        params={
+                            "dateFrom": date_from.isoformat(),
+                            "dateTo": date_to.isoformat(),
+                        },
                     )
-                if response.status_code == 429:
-                    raise FixtureProviderError("Provider rate limit reached; retry later")
-                response.raise_for_status()
-                payload: dict[str, Any] = response.json()
-                for match in payload.get("matches", []):
-                    home = match.get("homeTeam") or {}
-                    away = match.get("awayTeam") or {}
-                    if not home.get("name") or not away.get("name") or not match.get("utcDate"):
+                    if response.status_code == 429:
+                        raise FixtureProviderError(
+                            "Provider rate limit reached; retry later"
+                        )
+                    if response.status_code == 403:
+                        diagnostic["error"] = (
+                            "Access denied; verify account plan and competition coverage"
+                        )
+                        diagnostics.append(diagnostic)
                         continue
-                    fixtures.append(Fixture(
-                        home_team=home["name"],
-                        away_team=away["name"],
-                        league=league,
-                        country=country,
-                        competition_type="domestic_league",
-                        kickoff=datetime.fromisoformat(
-                            match["utcDate"].replace("Z", "+00:00")
-                        ),
-                    ))
-    except httpx.HTTPStatusError as exc:
-        raise FixtureProviderError(f"Fixture provider returned HTTP {exc.response.status_code}") from exc
+                    response.raise_for_status()
+                    payload: dict[str, Any] = response.json()
+                    matches = payload.get("matches", [])
+                    diagnostic["api_matches"] = len(matches)
+                    statuses = Counter(
+                        str(match.get("status", "UNKNOWN")).upper()
+                        for match in matches
+                    )
+                    diagnostic["status_counts"] = dict(sorted(statuses.items()))
+                    diagnostic["scheduled"] = statuses.get("SCHEDULED", 0)
+                    diagnostic["timed"] = statuses.get("TIMED", 0)
+                    for match in matches:
+                        status = str(match.get("status", "UNKNOWN")).upper()
+                        if status not in UPCOMING_STATUSES:
+                            diagnostic["ignored_other_statuses"] += 1
+                            continue
+                        home = match.get("homeTeam") or {}
+                        away = match.get("awayTeam") or {}
+                        utc_date = match.get("utcDate")
+                        if not home.get("name") or not away.get("name") or not utc_date:
+                            diagnostic["ignored_other_statuses"] += 1
+                            continue
+                        fixtures.append(Fixture(
+                            home_team=home["name"],
+                            away_team=away["name"],
+                            league=league,
+                            country=country,
+                            competition_type="domestic_league",
+                            kickoff=datetime.fromisoformat(
+                                utc_date.replace("Z", "+00:00")
+                            ),
+                        ))
+                        diagnostic["accepted_upcoming"] += 1
+                except httpx.HTTPStatusError as exc:
+                    diagnostic["error"] = (
+                        f"Provider returned HTTP {exc.response.status_code}"
+                    )
+                diagnostics.append(diagnostic)
+    except FixtureProviderError:
+        raise
     except httpx.HTTPError as exc:
-        raise FixtureProviderError(f"Could not reach fixture provider: {exc}") from exc
-    return fixtures
+        raise FixtureProviderError(
+            f"Could not reach fixture provider: {exc}"
+        ) from exc
+    return FixtureScan(fixtures=fixtures, leagues=diagnostics)
+
+
+def fetch_fixtures(date_from: date, date_to: date) -> list[Fixture]:
+    """Backward-compatible fixture-only helper."""
+    return fetch_fixtures_with_diagnostics(date_from, date_to).fixtures
+
 
 def upcoming_range(days: int = 7) -> tuple[date, date]:
     if not 1 <= days <= 14:
         raise ValueError("days must be between 1 and 14")
-    today = date.today()
+    today = datetime.now(timezone.utc).date()
     return today, today + timedelta(days=days)
