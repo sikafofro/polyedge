@@ -4,8 +4,8 @@ POLYEDGE is a rules-driven football home-win accumulator research and bankroll-t
 
 ## V1.1 operating rules
 
-- Starting paper bankroll: **$50 USD**.
-- Stake allocation: **25% of current settled bankroll per accumulator**. The initial stake is **$12.50**.
+- Starting paper bankroll: **$20 USD**.
+- Stake allocation: **25% of current settled bankroll per accumulator**. The initial stake is **$5.00**.
 - Only one active accumulator may be active at a time; wait for full settlement before the next entry.
 - Only configured clubs playing **at home in their domestic league** qualify.
 - Apply opponent exclusions in `config/team_rules.json`.
@@ -17,7 +17,7 @@ POLYEDGE is a rules-driven football home-win accumulator research and bankroll-t
 
 The starting balance and stake fraction are stored in `config/strategy.json`. The API's `GET /api/v1/strategy` endpoint and dashboard read these settings from the same file. The initial stake is calculated as:
 
-`$50.00 × 25% = $12.50`
+`$20.00 × 25% = $5.00`
 
 This is the initial allocation only. The next stake must be recalculated from settled available bankroll after the previous accumulator is fully settled. A persistent settlement ledger is a separate development milestone; this configuration change does not itself implement balance persistence.
 
@@ -37,7 +37,7 @@ This is the initial allocation only. The next stake must be recalculated from se
 
 One additional Portuguese exclusion was mentioned but not identified; it has deliberately not been guessed.
 
-## CSV fixture scanner
+## Polymarket read-only market connector\n\nThe read-only endpoint `GET /api/v1/polymarket/football-markets?days=14&limit=100` reads active soccer events from the public Polymarket Gamma API and conservatively matches event titles to qualifying upcoming fixtures. Public market data requires no wallet credentials. The endpoint returns event/market identifiers, outcome prices, liquidity and volume where supplied. It does not access private account data or submit, cancel, or sign orders. Name matching is deliberately conservative: unmatched fixtures remain unmatched for manual review.\n\nGamma API: `https://gamma-api.polymarket.com/events` (active, open soccer events).\n\n## CSV fixture scanner
 
 Required CSV columns: `kickoff,country,league,competition_type,home_team,away_team`. Kickoff must be ISO-8601 with timezone. The sample in `data/sample_fixtures.csv` is synthetic test data only.
 
