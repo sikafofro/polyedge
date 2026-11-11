@@ -12,8 +12,9 @@ from app.fixture_provider import FixtureProviderError, fetch_fixtures, upcoming_
 
 ROOT = Path(__file__).resolve().parents[2]
 RULES_PATH = ROOT / "config" / "team_rules.json"
+STRATEGY_PATH = ROOT / "config" / "strategy.json"
 
-app = FastAPI(title="POLYEDGE API", version="0.2.0")
+app = FastAPI(title="POLYEDGE API", version="0.3.0")
 
 
 class FixtureCsvRequest(BaseModel):
@@ -29,6 +30,15 @@ def load_rules() -> dict[str, Any]:
         raise HTTPException(status_code=500, detail="Team rules configuration is invalid JSON") from exc
 
 
+def load_strategy() -> dict[str, Any]:
+    try:
+        return json.loads(STRATEGY_PATH.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=500, detail="Strategy configuration is missing") from exc
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=500, detail="Strategy configuration is invalid JSON") from exc
+
+
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "service": "polyedge-api"}
@@ -41,17 +51,7 @@ def get_config() -> dict[str, Any]:
 
 @app.get("/api/v1/strategy")
 def get_strategy() -> dict[str, Any]:
-    return {
-        "starting_bankroll_usd": 100.0,
-        "stake_fraction": 0.25,
-        "fixture_grouping_window_minutes": 120,
-        "max_active_accumulators": 1,
-        "settlement_required_before_next_entry": True,
-        "execution_mode": "paper",
-        "minimum_odds": None,
-        "minimum_confidence": None,
-    }
-
+    return load_strategy()
 
 
 @app.get("/api/v1/fixtures/sample-csv")
@@ -61,6 +61,7 @@ def get_sample_fixture_csv() -> dict[str, str]:
         return {"csv_text": sample_path.read_text(encoding="utf-8")}
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Sample fixture CSV is missing") from exc
+
 
 @app.post("/api/v1/fixtures/scan")
 def scan_fixture_csv(payload: FixtureCsvRequest) -> dict[str, Any]:
@@ -86,13 +87,8 @@ def scan_fixture_csv(payload: FixtureCsvRequest) -> dict[str, Any]:
         }
         (eligible if qualifies else skipped).append(record)
 
-    eligible_fixtures = [
-        fixture for fixture in fixtures if qualify_fixture(fixture, rules)[0]
-    ]
-    grouped = group_fixtures(
-        eligible_fixtures,
-        window_minutes=120,
-    )
+    eligible_fixtures = [fixture for fixture in fixtures if qualify_fixture(fixture, rules)[0]]
+    grouped = group_fixtures(eligible_fixtures, window_minutes=120)
     groups = [
         {
             "group_number": index,
