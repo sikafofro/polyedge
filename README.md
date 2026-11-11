@@ -66,6 +66,15 @@ JSON
 
 The response separates qualifying and skipped fixtures, explains skip reasons, and groups eligible matches into accumulator windows.
 
+You can also upload a CSV file directly:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/fixtures/upload \\
+  -F "file=@data/sample_fixtures.csv;type=text/csv"
+```
+
+The upload endpoint accepts UTF-8 CSV files with a `.csv` filename. The sample file is synthetic test data only.
+
 Other endpoints:
 - `GET /health`
 - `GET /api/v1/config`
