@@ -95,7 +95,9 @@ def get_state(db_path: str | Path = DEFAULT_DB) -> dict[str, Any]:
             "SELECT * FROM cycles WHERE status='active' ORDER BY id DESC LIMIT 1"
         ).fetchone()
         latest = db.execute("SELECT * FROM cycles ORDER BY id DESC LIMIT 1").fetchone()
+        completed = db.execute("SELECT * FROM cycles WHERE status IN ('won','lost') ORDER BY id DESC LIMIT 1").fetchone()
         current = dict(cycle or latest) if latest else None
+        completed_cycle = dict(completed) if completed else None
         legs = []
         if current:
             legs = [dict(row) for row in db.execute(
@@ -113,6 +115,7 @@ def get_state(db_path: str | Path = DEFAULT_DB) -> dict[str, Any]:
             "account_status": account["status"],
             "pilot_ready": bool(account["pilot_ready"]),
             "cycle": current,
+            "last_completed_cycle": completed_cycle,
             "legs": legs,
             "execution_mode": "paper",
             "orders_placed": 0,
