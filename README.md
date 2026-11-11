@@ -91,7 +91,7 @@ POLYEDGE uses the football-data.org API v4 for scheduled fixtures. Its published
 4. Create a secret named `FOOTBALL_DATA_API_TOKEN` and paste the token as its value. Never put the token in a source file or chat.
 5. Open **Actions → Daily POLYEDGE fixture scan → Run workflow** to trigger the first manual scan. The workflow is also scheduled daily at 06:00 UTC (06:00 Accra time).
 
-The daily workflow saves a JSON report as a downloadable Actions artifact for 14 days. If the secret is missing, the scan will fail safely and place no bets. The live API endpoint is `GET /api/v1/fixtures/live?days=7`; it requires the token in the backend environment.
+The provider requests each league's date window once, then retains both `SCHEDULED` and `TIMED` fixtures while excluding other statuses. The JSON report includes per-league API match counts, status counts, accepted upcoming fixtures, and any access errors. The daily workflow saves this report as a downloadable Actions artifact for 14 days. If the secret is missing, the scan will fail safely and place no bets. The live API endpoint is `GET /api/v1/fixtures/live?days=7`; it requires the token in the backend environment.
 
 Football data provided by the Football-Data.org API.
 
