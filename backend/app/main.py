@@ -201,7 +201,7 @@ def get_polymarket_football_markets(days: int = 14, limit: int = 100) -> dict[st
     date_to = date_from + timedelta(days=days)
     try:
         fixtures = fetch_fixtures(date_from, date_to)
-        events = fetch_football_events(limit=limit)
+        events = fetch_football_events(limit=limit, date_from=date_from, date_to=date_to)
     except FixtureProviderError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
     except PolymarketDataError as exc:
