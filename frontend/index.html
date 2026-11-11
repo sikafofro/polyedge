@@ -94,7 +94,9 @@ async function refresh(){
   if(!configRes.ok||!strategyRes.ok)throw new Error('The backend configuration endpoints are unavailable.');
   const [config,strategy]=await Promise.all([configRes.json(),strategyRes.json()]);
   const data=marketRes.ok?await marketRes.json():null;
+  const marketError=marketRes.ok?null:await marketRes.json().catch(()=>({detail:'Market API returned a non-JSON response.'}));
   const rollover=rolloverRes.ok?await rolloverRes.json():null;
+  const rolloverError=rolloverRes.ok?null:await rolloverRes.json().catch(()=>({detail:'Rollover API returned a non-JSON response.'}));
   if(rollover){
    $('roll-equity').textContent=money(rollover.equity_usd);
    $('roll-stake').textContent=money(rollover.next_cycle_stake_usd);
@@ -109,6 +111,7 @@ async function refresh(){
    $('roll-progress').style.width=Math.min(100,(Number(cycle.cumulative_odds||1)/Number(rollover.target_odds))*100)+'%';
    $('roll-legs').innerHTML=(rollover.legs||[]).length?rollover.legs.map(l=>'<div class="data-row"><span>'+esc(l.fixture)+' · '+esc(l.selection)+'</span><strong>'+Number(l.decimal_odds).toFixed(2)+' · '+esc(l.result)+'</strong></div>').join(''):'<div class="empty">No settled selections in the active cycle yet.</div>';
   }
+  if(rolloverError){$('roll-equity').textContent='Unavailable';$('roll-stake').textContent='Unavailable';$('roll-reserve').textContent='Unavailable';$('roll-legs').innerHTML='<div class="empty">'+esc(rolloverError.detail||'D1 database binding is not configured.')+'</div>'; }
   const bankroll=Number(rollover?.equity_usd??strategy.starting_bankroll_usd),fraction=Number(strategy.stake_fraction);
   $('bankroll').textContent=money(bankroll);$('stake').textContent=money(rollover?.next_cycle_stake_usd??bankroll*fraction);
   $('stake-hint').textContent=(fraction*100).toFixed(0)+'% of configured bankroll';
@@ -121,13 +124,13 @@ async function refresh(){
   const intel=data?.market_intelligence;
   $('market-count').textContent=intel?.validated_match_winner_markets??'—';
   $('window-label').textContent=data?esc(data.date_from)+' → '+esc(data.date_to):'Market API unavailable';
-  $('fixtures').innerHTML=fixtures.length?fixtures.map(f=>{
+  $('fixtures').innerHTML=marketError?'<div class="empty">'+esc(marketError.detail||'Market API is unavailable.')+'</div>':fixtures.length?fixtures.map(f=>{
    const status=f.market_match_status==='matched'?'Event matched':'No event match';
    const cls=f.market_match_status==='matched'?'':'bad';
    return '<div class="fixture"><div><div class="fixture-title">'+esc(f.home_team)+' <span class="muted">vs</span> '+esc(f.away_team)+'</div><div class="fixture-meta">'+esc(f.league)+' · '+esc(new Date(f.kickoff).toLocaleString())+'</div></div><span class="status '+cls+'">'+status+'</span></div>';
   }).join(''):'<div class="empty">No qualifying fixtures returned. Check provider availability and team rules.</div>';
   const analyses=intel?.fixtures||[];
-  $('markets').innerHTML=analyses.length?analyses.map(f=>{
+  $('markets').innerHTML=marketError?'<div class="empty">'+esc(marketError.detail||'Market API is unavailable.')+'</div>':analyses.length?analyses.map(f=>{
    const m=f.selected_market;
    if(!m)return '<div class="market"><div class="market-title">'+esc(f.home_team)+' vs '+esc(f.away_team)+'</div><div class="market-meta">No validated 1X2 market · rejected or unavailable</div></div>';
    return '<div class="market"><div class="market-title">'+esc(f.home_team)+' vs '+esc(f.away_team)+'</div><div class="market-meta">'+esc(m.question)+' · Liquidity '+money(m.liquidity_usd)+'</div><div class="picks"><div class="pick"><small>HOME</small><b>'+Number(m.home_win_price).toFixed(3)+'</b></div><div class="pick"><small>DRAW</small><b>'+Number(m.outcomes.draw.price).toFixed(3)+'</b></div><div class="pick"><small>AWAY</small><b>'+Number(m.outcomes.away.price).toFixed(3)+'</b></div></div></div>';
