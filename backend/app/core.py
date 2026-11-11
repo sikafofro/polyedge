@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+from io import StringIO
 from typing import Any
 
 
@@ -39,8 +41,40 @@ def qualify_fixture(fixture: Fixture, rules: dict[str, Any]) -> tuple[bool, str]
     return False, "no configured selected team is playing at home in its domestic league"
 
 
+def parse_fixture_csv(csv_text: str) -> list[Fixture]:
+    """Parse CSV rows with ISO-8601 timezone-aware kickoff values."""
+    required = {"kickoff", "country", "league", "competition_type", "home_team", "away_team"}
+    reader = csv.DictReader(StringIO(csv_text))
+    if not reader.fieldnames:
+        raise ValueError("CSV must include a header row")
+    missing = required - set(reader.fieldnames)
+    if missing:
+        raise ValueError("CSV is missing columns: " + ", ".join(sorted(missing)))
+
+    fixtures: list[Fixture] = []
+    for line_number, row in enumerate(reader, start=2):
+        try:
+            kickoff = datetime.fromisoformat(row["kickoff"].strip().replace("Z", "+00:00"))
+            if kickoff.tzinfo is None:
+                raise ValueError("kickoff must include a timezone offset")
+            values = [row[key].strip() for key in required]
+            if any(not value for value in values):
+                raise ValueError("fixture fields cannot be blank")
+            fixtures.append(Fixture(
+                home_team=row["home_team"].strip(),
+                away_team=row["away_team"].strip(),
+                league=row["league"].strip(),
+                country=row["country"].strip(),
+                competition_type=row["competition_type"].strip(),
+                kickoff=kickoff,
+            ))
+        except (AttributeError, KeyError, ValueError) as exc:
+            raise ValueError(f"Invalid CSV row {line_number}: {exc}") from exc
+    return fixtures
+
+
 def group_fixtures(fixtures: list[Fixture], window_minutes: int = 120) -> list[list[Fixture]]:
-    """Group sorted eligible fixtures into rolling windows anchored at each group's first kickoff."""
+    """Group fixtures into rolling windows anchored at each group's first kickoff."""
     if window_minutes <= 0:
         raise ValueError("window_minutes must be positive")
 
