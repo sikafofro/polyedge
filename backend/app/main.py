@@ -10,6 +10,7 @@ from pydantic import BaseModel, Field
 from app.core import group_fixtures, parse_fixture_csv, qualify_fixture
 from app.fixture_provider import FixtureProviderError, fetch_fixtures, upcoming_range
 from app.polymarket_data import PolymarketDataError, search_football_events, match_fixtures_to_events
+from app.market_intelligence import analyse_fixture_markets
 
 ROOT = Path(__file__).resolve().parents[2]
 RULES_PATH = ROOT / "config" / "team_rules.json"
@@ -225,6 +226,7 @@ def get_polymarket_football_markets(days: int = 14, limit: int = 5) -> dict[str,
 
     events = list(events_by_id.values())
     matched = match_fixtures_to_events(qualifying, events)
+    market_intelligence = analyse_fixture_markets(matched, load_strategy())
     return {
         "provider": "Polymarket Gamma public-search",
         "authentication": "none_public_market_data",
@@ -235,6 +237,7 @@ def get_polymarket_football_markets(days: int = 14, limit: int = 5) -> dict[str,
         "matched_fixtures": sum(item["market_match_status"] == "matched" for item in matched),
         "unmatched_fixtures": sum(item["market_match_status"] == "unmatched" for item in matched),
         "matches": matched,
+        "market_intelligence": market_intelligence,
         "execution_mode": "paper",
         "orders_placed": 0,
     }
