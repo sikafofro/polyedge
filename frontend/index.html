@@ -61,6 +61,21 @@ h2{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--mute
   <div class="panel-head"><h2>Accumulator proposal</h2><span class="status" id="slip-status">Awaiting data</span></div>
   <div id="accumulator"><div class="empty">No paper accumulator has been proposed.</div></div>
  </div>
+ <div class="panel" style="grid-column:1/-1">
+  <div class="panel-head"><h2>Four-odds rollover engine</h2><span class="status good" id="rollover-mode">PAPER · NO ORDERS</span></div>
+  <div class="rollover-grid">
+   <div class="rollover-metric"><small>Account equity</small><b id="roll-equity">—</b></div>
+   <div class="rollover-metric"><small>Next 25% stake</small><b id="roll-stake">—</b></div>
+   <div class="rollover-metric"><small>75% reserve</small><b id="roll-reserve">—</b></div>
+   <div class="rollover-metric"><small>Rollover odds</small><b id="roll-odds">—</b></div>
+  </div>
+  <div class="data-row"><span>Cycle status</span><strong id="roll-cycle-status">—</strong></div>
+  <div class="data-row"><span>Last completed cycle</span><strong id="roll-last-cycle">—</strong></div>
+  <div class="data-row"><span>First 4.00+ paper hit</span><strong id="roll-pilot-ready">Not yet achieved</strong></div>
+  <div class="progress"><span id="roll-progress"></span></div>
+  <div class="callout warn">One successful 4.00+ paper rollover marks pilot readiness only. Live execution remains disabled and requires separate eligibility, risk and order-integration checks.</div>
+  <div id="roll-legs" class="empty">Rollover history will appear here.</div>
+ </div>
 </div>
 <div class="footer"><span id="updated">Not yet refreshed</span><span>POLYEDGE · Research only · Verify all prices before making decisions</span></div>
 </main>
@@ -72,12 +87,27 @@ async function refresh(){
  const button=$('refresh');button.disabled=true;button.textContent='Refreshing…';
  $('fixtures').innerHTML='<div class="empty">Loading fixtures and market data…</div>';
  try{
-  const [configRes,strategyRes,marketRes]=await Promise.all([
-   fetch('/api/v1/config'),fetch('/api/v1/strategy'),fetch('/api/v1/polymarket/football-markets?days=14&limit=5')
+  const [configRes,strategyRes,marketRes,rolloverRes]=await Promise.all([
+   fetch('/api/v1/config'),fetch('/api/v1/strategy'),fetch('/api/v1/polymarket/football-markets?days=14&limit=5'),fetch('/api/v1/rollover')
   ]);
   if(!configRes.ok||!strategyRes.ok)throw new Error('The backend configuration endpoints are unavailable.');
   const [config,strategy]=await Promise.all([configRes.json(),strategyRes.json()]);
   const data=marketRes.ok?await marketRes.json():null;
+  const rollover=rolloverRes.ok?await rolloverRes.json():null;
+  if(rollover){
+   $('roll-equity').textContent=money(rollover.equity_usd);
+   $('roll-stake').textContent=money(rollover.next_cycle_stake_usd);
+   $('roll-reserve').textContent=money(rollover.reserve_usd);
+   const cycle=rollover.cycle||{};
+   $('roll-odds').textContent=Number(cycle.cumulative_odds||1).toFixed(3)+' / '+Number(rollover.target_odds).toFixed(2);
+   $('roll-cycle-status').textContent=cycle.status||rollover.account_status;
+   const done=rollover.last_completed_cycle;
+   $('roll-last-cycle').textContent=done?('#'+done.id+' · '+done.status+' · '+Number(done.cumulative_odds).toFixed(3)+' odds'):'None yet';
+   $('roll-pilot-ready').textContent=rollover.pilot_ready?'One 4.00+ rollover completed':'Not yet achieved';
+   $('roll-mode').textContent='PAPER · NO ORDERS';
+   $('roll-progress').style.width=Math.min(100,(Number(cycle.cumulative_odds||1)/Number(rollover.target_odds))*100)+'%';
+   $('roll-legs').innerHTML=(rollover.legs||[]).length?rollover.legs.map(l=>'<div class="data-row"><span>'+esc(l.fixture)+' · '+esc(l.selection)+'</span><strong>'+Number(l.decimal_odds).toFixed(2)+' · '+esc(l.result)+'</strong></div>').join(''):'<div class="empty">No settled selections in the active cycle yet.</div>';
+  }
   const bankroll=Number(strategy.starting_bankroll_usd),fraction=Number(strategy.stake_fraction);
   $('bankroll').textContent=money(bankroll);$('stake').textContent=money(bankroll*fraction);
   $('stake-hint').textContent=(fraction*100).toFixed(0)+'% of configured bankroll';
