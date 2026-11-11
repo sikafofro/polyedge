@@ -81,6 +81,20 @@ Other endpoints:
 - `GET /api/v1/strategy`
 - `GET /api/v1/fixtures/sample-csv`
 
+## Live fixture provider and daily scan
+
+POLYEDGE uses the football-data.org API v4 for scheduled fixtures. Its published free coverage currently includes all seven leagues configured above: Premier League, La Liga, Bundesliga, Eredivisie, Ligue 1, Primeira Liga and Serie A. The free tier has request limits and delayed schedule/score data; this integration retrieves scheduled fixtures, not live scores.
+
+1. Register for a free API account at https://www.football-data.org/client/register.
+2. Retrieve your API token from your account or registration email.
+3. In GitHub, open this repository's **Settings → Secrets and variables → Actions → New repository secret**.
+4. Create a secret named `FOOTBALL_DATA_API_TOKEN` and paste the token as its value. Never put the token in a source file or chat.
+5. Open **Actions → Daily POLYEDGE fixture scan → Run workflow** to trigger the first manual scan. The workflow is also scheduled daily at 06:00 UTC (06:00 Accra time).
+
+The daily workflow saves a JSON report as a downloadable Actions artifact for 14 days. If the secret is missing, the scan will fail safely and place no bets. The live API endpoint is `GET /api/v1/fixtures/live?days=7`; it requires the token in the backend environment.
+
+Football data provided by the Football-Data.org API.
+
 ## Tests
 
 ```bash
