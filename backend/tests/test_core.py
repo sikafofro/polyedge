@@ -1,6 +1,14 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
-from app.core import Fixture, accumulator_stake, group_fixtures, qualify_fixture
+import pytest
+
+from app.core import (
+    Fixture,
+    accumulator_stake,
+    group_fixtures,
+    parse_fixture_csv,
+    qualify_fixture,
+)
 
 RULES = {
     "selected_teams": [
@@ -60,9 +68,32 @@ def test_stake_is_25_percent_of_current_bankroll():
 
 
 def test_invalid_stake_fraction_rejected():
-    try:
+    with pytest.raises(ValueError):
         accumulator_stake(100, 1.2)
-    except ValueError:
-        pass
-    else:
-        raise AssertionError("Expected invalid fraction to raise ValueError")
+
+
+def test_parse_fixture_csv_reads_timezone_aware_rows():
+    source = (
+        "kickoff,country,league,competition_type,home_team,away_team\n"
+        "2026-11-14T09:00:00+00:00,England,Premier League,"
+        "domestic_league,Arsenal,Everton\n"
+    )
+    parsed = parse_fixture_csv(source)
+    assert len(parsed) == 1
+    assert parsed[0].home_team == "Arsenal"
+    assert parsed[0].kickoff.tzinfo is not None
+
+
+def test_parse_fixture_csv_rejects_missing_timezone():
+    source = (
+        "kickoff,country,league,competition_type,home_team,away_team\n"
+        "2026-11-14T09:00:00,England,Premier League,"
+        "domestic_league,Arsenal,Everton\n"
+    )
+    with pytest.raises(ValueError, match="timezone"):
+        parse_fixture_csv(source)
+
+
+def test_parse_fixture_csv_rejects_missing_columns():
+    with pytest.raises(ValueError, match="missing columns"):
+        parse_fixture_csv("kickoff,home_team\n2026-11-14T09:00:00+00:00,Arsenal\n")
