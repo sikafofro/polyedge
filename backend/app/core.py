@@ -18,7 +18,30 @@ class Fixture:
 
 
 def _norm(value: str) -> str:
-    return " ".join(value.casefold().replace("&", "and").split())
+    """Normalize common football-data.org club-name variants."""
+    value = value.casefold().replace("&", "and")
+    value = value.replace("ü", "u").replace("ö", "o").replace("é", "e")
+    words = " ".join(value.replace(".", " ").split())
+    for suffix in (" fc", " cf", " sc", " afc"):
+        if words.endswith(suffix):
+            words = words[:-len(suffix)]
+    prefixes = ("fc ", "afc ", "sc ")
+    for prefix in prefixes:
+        if words.startswith(prefix):
+            words = words[len(prefix):]
+    aliases = {
+        "bayern munchen": "bayern munich",
+        "internazionale": "inter milan",
+        "internazionale milano": "inter milan",
+        "inter": "inter milan",
+        "paris saint germain": "paris saint-germain",
+        "sporting clube de portugal": "sporting cp",
+        "sporting lisbon": "sporting cp",
+        "brighton and hove albion": "brighton",
+        "tottenham": "tottenham hotspur",
+        "atletico madrid": "atletico madrid",
+    }
+    return aliases.get(words, words)
 
 
 def qualify_fixture(fixture: Fixture, rules: dict[str, Any]) -> tuple[bool, str]:
