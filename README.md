@@ -69,3 +69,23 @@ pytest
 - Validate competition, home/away orientation, timezone, market identity, and settlement before considering execution.
 - Log skipped fixtures and the exact rule that caused each skip.
 - Polymarket multi-event accumulator support must be verified before any execution design is treated as tradable.
+
+
+## Four-odds sequential rollover engine (paper only)
+
+The rollover engine is implemented in `backend/app/rollover.py` and exposed through:
+
+- `GET /api/v1/rollover` — account equity, current cycle, reserve, next 25% stake, cumulative odds, pilot-readiness flag and settlement history.
+- `POST /api/v1/rollover/settle` — records one already-settled paper selection. JSON fields: `fixture`, `selection`, `decimal_odds`, and `result` (`won`, `lost`, or `void`).
+
+### Rollover accounting
+
+Each cycle allocates 25% of settled equity as the initial rollover stake and leaves 75% as reserve. Winning legs are sequential: the full returned stake is rolled into the next selection until cumulative decimal odds reach at least 4.00. A void leg returns the current exposure without advancing cumulative odds. A loss consumes the cycle's initial stake and starts a new cycle from remaining equity (unless the account is exhausted).
+
+On a successful cycle, new equity is the untouched reserve plus the full final returned stake. For example, $20 starts with a $5 rollover stake and $15 reserve. At exactly 4.00 cumulative odds, the $5 becomes $20; new equity is therefore $35 and the next 25% stake is $8.75. This includes the returned principal as well as profit and avoids understating account equity.
+
+The first completed 4.00+ paper rollover sets `pilot_ready=true`. This is an operational smoke-test milestone only, **not evidence of a profitable strategy and not an automatic live-trading switch**. Live execution remains disabled; no wallet or order-submission integration is present.
+
+The ledger uses SQLite at `data/rollover.sqlite3` by default. Set `POLYEDGE_ROLLOVER_DB` to a path on a persistent mounted volume in deployment; an ephemeral filesystem can lose the ledger on restart or redeploy. Back up this database before any future live pilot.
+
+Configuration keys: `rollover_target_odds`, `rollover_equity_target_usd`, `rollover_settlement_mode`, `paper_cycle_required_for_pilot_readiness`, and `live_execution_enabled`.
