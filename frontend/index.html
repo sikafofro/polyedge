@@ -27,8 +27,8 @@
     <div class="status">● PAPER MODE · LIVE TRADING DISABLED</div>
   </header>
   <div class="grid">
-    <div class="panel metric"><small>Starting bankroll</small><strong id="bankroll">$100.00</strong><small>USD · initial paper balance</small></div>
-    <div class="panel metric"><small>Stake per accumulator</small><strong id="stake">25%</strong><small>of settled available bankroll</small></div>
+    <div class="panel metric"><small>Starting bankroll</small><strong id="bankroll">$50.00</strong><small>USD · initial paper balance</small></div>
+    <div class="panel metric"><small>Stake per accumulator</small><strong id="stake">$12.50</strong><small>25% of settled available bankroll</small></div>
     <div class="panel metric"><small>Selected clubs</small><strong id="club-count">9</strong><small>domestic league home fixtures</small></div>
     <div class="panel metric"><small>Grouping window</small><strong>2 hrs</strong><small>one active accumulator at a time</small></div>
   </div>
@@ -47,21 +47,23 @@
       <div class="team"><b>Market execution</b><span class="pill">Not connected</span></div>
     </div>
   </section>
-  <p class="foot">POLYEDGE V1.0 · Monitoring prototype. Fixture feeds, persistence, historical backtesting and verified market execution are not yet connected.</p>
+  <p class="foot">POLYEDGE V1.1 · Fixture scanning and bankroll settings are configured. Persistent settlement tracking and verified market execution are still in development.</p>
 </main>
 <script>
 (async()=>{
   try{
-    const response=await fetch('/api/v1/config');
-    if(!response.ok) throw new Error('API not available');
-    const config=await response.json();
+    const [configResponse,strategyResponse]=await Promise.all([fetch('/api/v1/config'),fetch('/api/v1/strategy')]);
+    if(!configResponse.ok||!strategyResponse.ok) throw new Error('API not available');
+    const [config,strategy]=await Promise.all([configResponse.json(),strategyResponse.json()]);
     const teams=config.selected_teams||[];
     document.getElementById('club-count').textContent=teams.length;
+    document.getElementById('bankroll').textContent=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(strategy.starting_bankroll_usd);
+    document.getElementById('stake').textContent=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(strategy.starting_bankroll_usd*strategy.stake_fraction);
     document.getElementById('teams').innerHTML=teams.map(t=>
       '<div class="team"><b>'+t.team+'</b><span>'+t.league+' · Avoid: '+(t.excluded_opponents||[]).join(', ')+'</span></div>'
     ).join('');
   }catch(e){
-    document.getElementById('teams').innerHTML='<p class="muted">Dashboard shell loaded. Start the backend API to load the live rules configuration.</p>';
+    document.getElementById('teams').innerHTML='<p class="muted">Dashboard shell loaded. Start the backend API to load live configuration.</p>';
   }
 })();
 </script>
