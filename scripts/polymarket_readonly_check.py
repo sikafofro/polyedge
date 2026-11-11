@@ -15,7 +15,8 @@ from app.polymarket_data import fetch_football_events, match_fixtures_to_events
 
 
 def main() -> int:
-    events = fetch_football_events(limit=100)
+    start, end = upcoming_range(days=14)
+    events = fetch_football_events(limit=100, date_from=start, date_to=end)
     markets = [
         market
         for event in events
@@ -37,7 +38,6 @@ def main() -> int:
             "to enable live fixture-to-market matching."
         )
     else:
-        start, end = upcoming_range(days=14)
         fixture_scan = fetch_fixtures_with_diagnostics(start, end)
         rules = json.loads(
             (ROOT / "config" / "team_rules.json").read_text(encoding="utf-8")
