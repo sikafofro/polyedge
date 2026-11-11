@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field
 
 from app.core import group_fixtures, parse_fixture_csv, qualify_fixture
 from app.fixture_provider import FixtureProviderError, fetch_fixtures, upcoming_range
+from app.polymarket_data import PolymarketDataError, fetch_football_events, match_fixtures_to_events
 
 ROOT = Path(__file__).resolve().parents[2]
 RULES_PATH = ROOT / "config" / "team_rules.json"
@@ -181,4 +182,54 @@ def scan_live_fixtures(days: int = 7) -> dict[str, Any]:
         ],
         "execution_mode": "paper",
         "note": "Live fixture data only; no bets or market orders are placed.",
+    }
+
+
+@app.get("/api/v1/polymarket/football-markets")
+def get_polymarket_football_markets(days: int = 14, limit: int = 100) -> dict[str, Any]:
+    """Match configured upcoming fixtures to public Polymarket soccer events.
+
+    This endpoint uses public Gamma market data only. It does not authenticate
+    a wallet, access private account data, or place/cancel orders.
+    """
+    if not 1 <= days <= 14:
+        raise HTTPException(status_code=422, detail="days must be between 1 and 14")
+    if not 1 <= limit <= 100:
+        raise HTTPException(status_code=422, detail="limit must be between 1 and 100")
+    from datetime import date, timedelta
+    date_from = date.today()
+    date_to = date_from + timedelta(days=days)
+    try:
+        fixtures = fetch_fixtures(date_from, date_to)
+        events = fetch_football_events(limit=limit)
+    except FixtureProviderError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except PolymarketDataError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    rules = load_rules()
+    qualifying = []
+    for fixture in fixtures:
+        qualifies, _ = qualify_fixture(fixture, rules)
+        if qualifies:
+            qualifying.append({
+                "kickoff": fixture.kickoff.isoformat(),
+                "country": fixture.country,
+                "league": fixture.league,
+                "home_team": fixture.home_team,
+                "away_team": fixture.away_team,
+            })
+    matched = match_fixtures_to_events(qualifying, events)
+    return {
+        "provider": "Polymarket Gamma API",
+        "authentication": "none_public_market_data",
+        "date_from": date_from.isoformat(),
+        "date_to": date_to.isoformat(),
+        "fixtures_checked": len(qualifying),
+        "events_scanned": len(events),
+        "matched_fixtures": sum(item["market_match_status"] == "matched" for item in matched),
+        "unmatched_fixtures": sum(item["market_match_status"] == "unmatched" for item in matched),
+        "matches": matched,
+        "execution_mode": "paper",
+        "orders_placed": 0,
     }
