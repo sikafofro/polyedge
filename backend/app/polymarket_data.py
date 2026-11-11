@@ -15,21 +15,33 @@ class PolymarketDataError(RuntimeError):
 
 def _normalise(value: str) -> str:
     value = value.casefold().replace("&", "and")
-    return re.sub(r"[^a-z0-9]+", " ", value).strip()
+    for source, target in (("ü", "u"), ("ö", "o"), ("é", "e"), ("ñ", "n"), ("á", "a")):
+        value = value.replace(source, target)
+    words = re.sub(r"[^a-z0-9]+", " ", value).strip()
+    for suffix in (" fc", " cf", " sc", " afc"):
+        if words.endswith(suffix):
+            words = words[:-len(suffix)]
+    for prefix in ("fc ", "afc ", "sc "):
+        if words.startswith(prefix):
+            words = words[len(prefix):]
+    return words
 
 
 def _contains_team(title: str, team: str) -> bool:
     title_norm = f" {_normalise(title)} "
-    team_norm = f" {_normalise(team)} "
     aliases = {
         "manchester united": ("man united",),
         "manchester city": ("man city",),
         "paris saint germain": ("psg",),
         "tottenham hotspur": ("tottenham",),
         "inter milan": ("internazionale", "inter"),
+        "bayern munchen": ("bayern munich",),
         "bayern munich": ("bayern munchen",),
+        "rc celta de vigo": ("celta de vigo", "celta vigo"),
+        "1 fc koln": ("koln", "cologne", "fc koln"),
     }
-    candidates = (team_norm.strip(), *aliases.get(_normalise(team), ()))
+    team_norm = _normalise(team)
+    candidates = (team_norm, *aliases.get(team_norm, ()))
     return any(f" {candidate} " in title_norm for candidate in candidates)
 
 
@@ -69,6 +81,36 @@ def fetch_football_events(
     if not isinstance(payload, list):
         raise PolymarketDataError("Unexpected Gamma API response: expected an event list")
     return payload
+
+
+def search_football_events(query: str, limit_per_type: int = 5) -> list[dict[str, Any]]:
+    """Search public active Polymarket events by fixture team names."""
+    if not query.strip():
+        raise ValueError("query cannot be blank")
+    if not 1 <= limit_per_type <= 20:
+        raise ValueError("limit_per_type must be between 1 and 20")
+    try:
+        response = httpx.get(
+            f"{GAMMA_BASE_URL}/public-search",
+            params={
+                "q": query,
+                "events_status": "active",
+                "limit_per_type": limit_per_type,
+                "search_tags": "true",
+            },
+            headers={"Accept": "application/json"},
+            timeout=20.0,
+        )
+        response.raise_for_status()
+        payload = response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        raise PolymarketDataError(f"Could not search Polymarket events: {exc}") from exc
+    if not isinstance(payload, dict):
+        raise PolymarketDataError("Unexpected public-search response: expected an object")
+    events = payload.get("events") or []
+    if not isinstance(events, list):
+        raise PolymarketDataError("Unexpected public-search response: events must be a list")
+    return events
 
 
 def match_fixtures_to_events(
