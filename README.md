@@ -5,41 +5,82 @@ POLYEDGE is a rules-driven football home-win accumulator research and bankroll-t
 ## V1.0 operating rules
 
 - Starting paper bankroll: **$100 USD**.
-- Stake allocation: **25% of current bankroll per accumulator**, calculated only when a new accumulator is eligible to start.
-- Only one accumulator may be active at a time. No new stake is opened until every leg in the active accumulator is settled.
-- Eligible fixtures must feature one of the configured clubs **at home in its domestic league**.
-- Apply the configured opponent exclusions exactly. Rules are editable in `config/team_rules.json`.
-- Group otherwise eligible fixtures whose scheduled kickoffs fall within a rolling two-hour window into one logical accumulator.
-- No minimum odds or model-confidence filter is applied in V1.0. The system still records market availability and execution constraints.
-- A logical accumulator is not assumed to be a native Polymarket product. Until combination support is verified, V1 operates in simulation/paper mode and must not imply that separately purchased positions have an all-or-nothing accumulator payout.
+- Stake allocation: **25% of current settled bankroll per accumulator**.
+- Only one active accumulator may be active at a time; wait for full settlement before the next entry.
+- Only configured clubs playing **at home in their domestic league** qualify.
+- Apply opponent exclusions in `config/team_rules.json`.
+- Group eligible kickoffs into rolling two-hour windows anchored at the first kickoff in each group.
+- No minimum odds or confidence filter is applied in V1.
+- Execution remains **paper-only**. A logical accumulator is not represented as a native Polymarket combo unless platform support is verified.
 
-## Selected clubs and exclusions
+## Configured clubs
 
 | League | Home club | Opponents to skip |
 |---|---|---|
 | English Premier League | Arsenal | Liverpool, Manchester United, Manchester City, Brighton, Tottenham Hotspur, Aston Villa, Chelsea |
-| La Liga | Barcelona | Real Madrid, Real Betis, Atlético Madrid |
-| La Liga | Real Madrid | Barcelona, Real Betis, Atlético Madrid |
-| Bundesliga | Bayern Munich | Borussia Dortmund |
-| Eredivisie | PSV | Feyenoord |
-| Ligue 1 | Paris Saint-Germain | Monaco, Marseille, Strasbourg |
-| Primeira Liga | Porto | Sporting CP, Benfica |
-| Primeira Liga | Sporting CP | Porto, Benfica |
-| Serie A | Inter Milan | AC Milan, Fiorentina, Como, Lazio, Roma, Napoli |
+| Spanish La Liga | Barcelona | Real Madrid, Real Betis, Atlético Madrid |
+| Spanish La Liga | Real Madrid | Barcelona, Real Betis, Atlético Madrid |
+| German Bundesliga | Bayern Munich | Borussia Dortmund |
+| Dutch Eredivisie | PSV | Feyenoord |
+| French Ligue 1 | Paris Saint-Germain | Monaco, Marseille, Strasbourg |
+| Portuguese Primeira Liga | Porto | Sporting CP, Benfica |
+| Portuguese Primeira Liga | Sporting CP | Porto, Benfica |
+| Italian Serie A | Inter Milan | AC Milan, Fiorentina, Como, Lazio, Roma, Napoli |
 
-The user may add or remove exclusions later. No missing Portuguese exclusion has been guessed.
+One additional Portuguese exclusion was mentioned but not identified; it has deliberately not been guessed.
 
-## Development status
+## CSV fixture scanner
 
-This repository is being initialized. The first milestone is a testable rules and bankroll core, followed by fixture-data integration, accumulator scheduling, a dashboard, backtesting, and only then any live-market integration.
+The first scanner milestone uses CSV input so the rules can be tested before connecting a live fixture provider.
+
+Required CSV columns:
+
+`kickoff,country,league,competition_type,home_team,away_team`
+
+- `kickoff` must be ISO-8601 and include a timezone, for example `2026-11-14T09:00:00+00:00`.
+- `competition_type` must be `domestic_league` to qualify.
+- The sample in `data/sample_fixtures.csv` is **synthetic test data, not real fixtures**.
+
+### Run the API
+
+From the repository root:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r backend/requirements.txt
+uvicorn app.main:app --app-dir backend --reload
+```
+
+### Scan fixtures
+
+Send the CSV text as JSON to the scanner:
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/fixtures/scan \
+  -H "Content-Type: application/json" \
+  --data-binary @- <<'JSON'
+{"csv_text":"kickoff,country,league,competition_type,home_team,away_team\n2026-11-14T09:00:00+00:00,England,Premier League,domestic_league,Arsenal,Everton\n"}
+JSON
+```
+
+The response separates qualifying and skipped fixtures, explains skip reasons, and groups eligible matches into accumulator windows.
+
+Other endpoints:
+- `GET /health`
+- `GET /api/v1/config`
+- `GET /api/v1/strategy`
+- `GET /api/v1/fixtures/sample-csv`
+
+## Tests
+
+```bash
+cd backend
+pytest
+```
 
 ## Safety and operational controls
 
-- Default to paper trading; live trading must remain disabled until explicitly implemented, reviewed, and enabled.
-- Never store private keys, seed phrases, or API secrets in source control.
-- Validate fixture competition, home/away orientation, kickoff time, market identity, and settlement status before considering an entry.
+- No wallet, private key, seed phrase, or live order placement is implemented.
+- Validate competition, home/away orientation, timezone, market identity, and settlement before considering execution.
 - Log skipped fixtures and the exact rule that caused each skip.
-
-## Local development
-
-The initial backend is Python 3.11+ with FastAPI. See `backend/requirements.txt`.
