@@ -8,6 +8,7 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from pydantic import BaseModel, Field
 
 from app.core import group_fixtures, parse_fixture_csv, qualify_fixture
+from app.fixture_provider import FixtureProviderError, fetch_fixtures, upcoming_range
 
 ROOT = Path(__file__).resolve().parents[2]
 RULES_PATH = ROOT / "config" / "team_rules.json"
@@ -133,3 +134,55 @@ async def upload_fixture_csv(file: UploadFile = File(...)) -> dict[str, Any]:
     if not csv_text.strip():
         raise HTTPException(status_code=422, detail="Uploaded CSV is empty")
     return scan_fixture_csv(FixtureCsvRequest(csv_text=csv_text))
+
+
+@app.get("/api/v1/fixtures/live")
+def scan_live_fixtures(days: int = 7) -> dict[str, Any]:
+    """Fetch live upcoming league fixtures and apply the configured selection rules."""
+    if not 1 <= days <= 14:
+        raise HTTPException(status_code=422, detail="days must be between 1 and 14")
+    from datetime import date, timedelta
+    date_from = date.today()
+    date_to = date_from + timedelta(days=days)
+    try:
+        fixtures = fetch_fixtures(date_from, date_to)
+    except FixtureProviderError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    rules = load_rules()
+    eligible = []
+    skipped = []
+    qualifying_fixtures = []
+    for fixture in fixtures:
+        qualifies, reason = qualify_fixture(fixture, rules)
+        record = {
+            "kickoff": fixture.kickoff.isoformat(),
+            "country": fixture.country,
+            "league": fixture.league,
+            "home_team": fixture.home_team,
+            "away_team": fixture.away_team,
+            "reason": reason,
+        }
+        (eligible if qualifies else skipped).append(record)
+        if qualifies:
+            qualifying_fixtures.append(fixture)
+    groups = group_fixtures(qualifying_fixtures, window_minutes=120)
+    return {
+        "mode": "live_fixture_scan",
+        "provider": "football-data.org",
+        "date_from": date_from.isoformat(),
+        "date_to": date_to.isoformat(),
+        "total_fixtures": len(fixtures),
+        "qualifying_fixtures": len(eligible),
+        "skipped_fixtures": len(skipped),
+        "eligible": eligible,
+        "skipped": skipped,
+        "accumulator_groups": [
+            {"group_number": i, "fixtures": [
+                {"kickoff": f.kickoff.isoformat(), "home_team": f.home_team,
+                 "away_team": f.away_team, "league": f.league, "country": f.country}
+                for f in group
+            ]} for i, group in enumerate(groups, start=1)
+        ],
+        "execution_mode": "paper",
+        "note": "Live fixture data only; no bets or market orders are placed.",
+    }
