@@ -52,6 +52,15 @@ def get_strategy() -> dict[str, Any]:
     }
 
 
+
+@app.get("/api/v1/fixtures/sample-csv")
+def get_sample_fixture_csv() -> dict[str, str]:
+    sample_path = ROOT / "data" / "sample_fixtures.csv"
+    try:
+        return {"csv_text": sample_path.read_text(encoding="utf-8")}
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="Sample fixture CSV is missing") from exc
+
 @app.post("/api/v1/fixtures/scan")
 def scan_fixture_csv(payload: FixtureCsvRequest) -> dict[str, Any]:
     """Scan a supplied CSV against configured club, competition and exclusion rules."""
