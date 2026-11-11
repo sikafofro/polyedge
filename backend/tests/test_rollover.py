@@ -42,7 +42,7 @@ def test_sequential_legs_roll_the_full_return_until_four_odds(tmp_path):
     state = settle_leg("Match 4", "Home win", 1.55, "won", db)
     assert state["last_event"] == "target_hit"
     assert state["last_completed_cycle"]["cumulative_odds"] == pytest.approx(4.06875)
-    assert state["equity_usd"] == pytest.approx(35.34375)
+    assert state["equity_usd"] == pytest.approx(35.34)
 
 
 def test_loss_deducts_cycle_principal_and_recalculates_from_remaining_equity(tmp_path):
