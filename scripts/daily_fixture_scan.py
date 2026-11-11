@@ -17,7 +17,7 @@ from app.fixture_provider import (
 
 def main() -> int:
     try:
-        start, end = upcoming_range(days=7)
+        start, end = upcoming_range(days=14)
         scan = fetch_fixtures_with_diagnostics(start, end)
         fixtures = scan.fixtures
     except (FixtureProviderError, ValueError) as exc:
