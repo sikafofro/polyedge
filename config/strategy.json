@@ -1,10 +1,15 @@
 {
-  "starting_bankroll_usd": 20.0,
+  "starting_bankroll_usd": 20,
   "stake_fraction": 0.25,
   "fixture_grouping_window_minutes": 120,
   "max_active_accumulators": 1,
   "settlement_required_before_next_entry": true,
   "execution_mode": "paper",
   "minimum_odds": null,
-  "minimum_confidence": null
+  "minimum_confidence": null,
+  "rollover_target_odds": 4,
+  "rollover_equity_target_usd": 10000,
+  "rollover_settlement_mode": "sequential",
+  "paper_cycle_required_for_pilot_readiness": 1,
+  "live_execution_enabled": false
 }
