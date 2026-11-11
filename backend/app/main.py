@@ -11,6 +11,7 @@ from app.core import group_fixtures, parse_fixture_csv, qualify_fixture
 from app.fixture_provider import FixtureProviderError, fetch_fixtures, upcoming_range
 from app.polymarket_data import PolymarketDataError, search_football_events, match_fixtures_to_events
 from app.market_intelligence import analyse_fixture_markets
+from app.rollover import get_state, settle_leg
 
 ROOT = Path(__file__).resolve().parents[2]
 RULES_PATH = ROOT / "config" / "team_rules.json"
@@ -21,6 +22,13 @@ app = FastAPI(title="POLYEDGE API", version="0.3.0")
 
 class FixtureCsvRequest(BaseModel):
     csv_text: str = Field(min_length=1)
+
+
+class RolloverSettlementRequest(BaseModel):
+    fixture: str = Field(min_length=1, max_length=200)
+    selection: str = Field(min_length=1, max_length=200)
+    decimal_odds: float = Field(gt=0, le=1000)
+    result: str
 
 
 def load_rules() -> dict[str, Any]:
@@ -241,3 +249,27 @@ def get_polymarket_football_markets(days: int = 14, limit: int = 5) -> dict[str,
         "execution_mode": "paper",
         "orders_placed": 0,
     }
+
+
+
+@app.get("/api/v1/rollover")
+def get_rollover_state() -> dict[str, Any]:
+    """Return the persistent paper rollover account and active cycle."""
+    try:
+        return get_state()
+    except (ValueError, OSError) as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@app.post("/api/v1/rollover/settle")
+def settle_rollover_leg(payload: RolloverSettlementRequest) -> dict[str, Any]:
+    """Record one settled sequential rollover leg; this endpoint never places orders."""
+    try:
+        return settle_leg(
+            fixture=payload.fixture,
+            selection=payload.selection,
+            decimal_odds=payload.decimal_odds,
+            result=payload.result,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
