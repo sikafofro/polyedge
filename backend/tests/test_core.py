@@ -9,6 +9,7 @@ from app.core import (
     parse_fixture_csv,
     qualify_fixture,
 )
+from app.main import get_strategy
 
 RULES = {
     "selected_teams": [
@@ -63,8 +64,18 @@ def test_groups_fixtures_within_two_hours():
 
 
 def test_stake_is_25_percent_of_current_bankroll():
+    assert accumulator_stake(50) == 12.5
     assert accumulator_stake(100) == 25
     assert accumulator_stake(80) == 20
+
+
+def test_strategy_endpoint_uses_fifty_dollar_bankroll():
+    strategy = get_strategy()
+    assert strategy["starting_bankroll_usd"] == 50.0
+    assert strategy["stake_fraction"] == 0.25
+    assert accumulator_stake(
+        strategy["starting_bankroll_usd"], strategy["stake_fraction"]
+    ) == 12.5
 
 
 def test_invalid_stake_fraction_rejected():
