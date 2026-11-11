@@ -20,5 +20,7 @@ jobs:
           python-version: "3.11"
       - name: Install dependencies
         run: pip install -r backend/requirements.txt
-      - name: Query public Polymarket soccer events
+      - name: Query public Polymarket soccer events and match live fixtures
+        env:
+          FOOTBALL_DATA_API_TOKEN: ${{ secrets.FOOTBALL_DATA_API_TOKEN }}
         run: python scripts/polymarket_readonly_check.py
