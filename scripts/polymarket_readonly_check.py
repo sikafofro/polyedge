@@ -111,6 +111,15 @@ def main() -> int:
             for item in matched[:10]
         ],
         "sample_event_titles": [event.get("title") for event in events[:15]],
+        "sample_market_shapes": [
+            {
+                "event_title": event.get("title"),
+                "market_count": len(event.get("markets") or []),
+                "first_market_keys": sorted((event.get("markets") or [{}])[0].keys()) if event.get("markets") else [],
+                "first_market_sample": (event.get("markets") or [None])[0],
+            }
+            for event in events[:3]
+        ],
         "market_intelligence": intelligence,
         "league_diagnostics": fixture_scan.leagues,
     })
