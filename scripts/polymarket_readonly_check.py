@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "backend"))
 
 from app.core import qualify_fixture
+from app.market_intelligence import analyse_fixture_markets
 from app.fixture_provider import (
     FixtureProviderError,
     fetch_fixtures_with_diagnostics,
@@ -83,6 +84,8 @@ def main() -> int:
         for market in (event.get("markets") or [])
     ]
     matches = match_fixtures_to_events(qualifying, events)
+    strategy = json.loads((ROOT / 'config' / 'strategy.json').read_text(encoding='utf-8'))
+    intelligence = analyse_fixture_markets(matches, strategy)
     matched = [item for item in matches if item["market_match_status"] == "matched"]
     summary.update({
         "fixture_matching_status": "completed",
@@ -108,6 +111,7 @@ def main() -> int:
             for item in matched[:10]
         ],
         "sample_event_titles": [event.get("title") for event in events[:15]],
+        "market_intelligence": intelligence,
         "league_diagnostics": fixture_scan.leagues,
     })
     print(json.dumps(summary, indent=2))
