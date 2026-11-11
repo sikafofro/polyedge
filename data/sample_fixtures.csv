@@ -1,0 +1,7 @@
+# SYNTHETIC TEST DATA ONLY — these are not real or verified fixtures.\nkickoff,country,league,competition_type,home_team,away_team
+2026-11-14T09:00:00+00:00,England,Premier League,domestic_league,Arsenal,Everton
+2026-11-14T09:30:00+00:00,England,Premier League,domestic_league,Arsenal,Liverpool
+2026-11-14T10:15:00+00:00,Spain,La Liga,domestic_league,Barcelona,Valencia
+2026-11-14T11:00:00+00:00,Germany,Bundesliga,domestic_league,Bayern Munich,Borussia Dortmund
+2026-11-14T12:30:00+00:00,France,Ligue 1,domestic_league,Paris Saint-Germain,Nice
+2026-11-14T13:00:00+00:00,England,FA Cup,domestic_cup,Arsenal,Everton
