@@ -1,5 +1,5 @@
 {
-  "starting_bankroll_usd": 50.0,
+  "starting_bankroll_usd": 20.0,
   "stake_fraction": 0.25,
   "fixture_grouping_window_minutes": 120,
   "max_active_accumulators": 1,
